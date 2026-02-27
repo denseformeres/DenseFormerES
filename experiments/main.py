@@ -102,7 +102,7 @@ def main(args):
 
     if args.dlr is None:
         args.dlr = args.lr
-    if args.model == 'denseformer2':
+    if args.model == 'denseformeres':
        group_specs = distributed_backend.get_raw_model(model).get_parameter_group_specs(args.dlr, dense_weight_decay=args.weight_decay) 
     else:
         group_specs = distributed_backend.get_raw_model(model).get_parameter_group_specs()
