@@ -195,7 +195,7 @@ class Block(nn.Module):
         return x
 
 
-class DenseFormer2(nn.Module):
+class DenseformerES(nn.Module):
 
     needs_iter = False
 
