@@ -359,7 +359,7 @@ class DenseformerES(nn.Module):
             split_sizes = get_split_sizes(C, self.es)
             print('split_sizes', split_sizes)
             x_splits = torch.split(x_stack, split_sizes, dim=-1)
-            print('torch.split(x_stack, split_sizes, dim=-1).shape', x_splits.shape)
+            print('len(x_splits)', len(x_splits))
             w = self.weights[rep_idx - 1].weight.view(-1)
             print('self.weights[rep_idx - 1].weight.view(-1).shape', w.shape)
             print('w.numel()', w.numel())
