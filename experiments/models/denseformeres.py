@@ -330,7 +330,7 @@ class DenseformerES(nn.Module):
                 current_group_size += 1
                 print('current_group_size', current_group_size)
             x_accs.append((torch.zeros((current_group_size, *x.shape), device=x.device, dtype=x.dtype), None))
-            print('x_accs.shape', x_accs.shape)
+            print('len(x_accs)', len(x_accs))
         x_accs[0] = apply_inplace_set(x_accs[0], 0, x)
         print('x_accs[0].shape', x_accs[0].shape)
         for rep_idx in range(1, self.n_repeat+1):
@@ -347,7 +347,7 @@ class DenseformerES(nn.Module):
                 x,
                 
             )
-            print('x_accs.shape', x_accs.shape)
+            print('len(x_accs)', len(x_accs))
             x_stack = x_accs[rep_idx % self.dilation_factor][1]
             print('x_stack.shape', x_stack.shape)
             if x_stack is None:
