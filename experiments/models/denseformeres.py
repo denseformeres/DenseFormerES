@@ -318,53 +318,74 @@ class DenseformerES(nn.Module):
             print(f"NaNs found after pos_emb_closure.adapt_model_input(tok_emb, start_index=index_shift)")
 
         x = self.transformer.drop(x)
+        print('self.transformer.drop(x)')
         if torch.isnan(x).any():
             print(f"NaNs found after self.transformer.drop(x)")
 
         x_accs = []
         for i in range(self.dilation_factor):
             current_group_size = (self.n_repeat + 1) // self.dilation_factor
+            print('current_group_size', current_group_size)
             if i < (self.n_repeat + 1) % self.dilation_factor:
                 current_group_size += 1
+                print('current_group_size', current_group_size)
             x_accs.append((torch.zeros((current_group_size, *x.shape), device=x.device, dtype=x.dtype), None))
+            print('x_accs.shape', x_accs.shape)
         x_accs[0] = apply_inplace_set(x_accs[0], 0, x)
+        print('x_accs[0].shape', x_accs[0].shape)
         for rep_idx in range(1, self.n_repeat+1):
+            print('rep_idx', rep_idx)
             if rep_idx == 1 + self.n_cuda0:
                 x = safe_move(x, "cuda:1")
                 x_accs[rep_idx % self.dilation_factor] = (safe_move(x_accs[rep_idx % self.dilation_factor][0], 'cuda:1'), safe_move(x_accs[rep_idx % self.dilation_factor][1], 'cuda:1'))
             for block in self.transformer.h[rep_idx-1]:
                 x = block(x, pos_emb_closure, cache_context, start_index=index_shift)
+                print('block(x, pos_emb_closure, cache_context, start_index=index_shift).shape', x.shape)
             x_accs[rep_idx % self.dilation_factor] = apply_inplace_set(
                 x_accs[rep_idx % self.dilation_factor], 
                 rep_idx // self.dilation_factor, 
                 x,
                 
             )
-            x_stack = x_accs[rep_idx % self.dilation_factor][1] 
+            print('x_accs.shape', x_accs.shape)
+            x_stack = x_accs[rep_idx % self.dilation_factor][1]
+            print('x_stack.shape', x_stack.shape)
             if x_stack is None:
                 raise RuntimeError(f"x_stack is None at rep_idx={rep_idx}")
             C = x_stack.shape[-1]
+            print('x_stack.shape[-1]', C)
             if C == 0:
                 raise RuntimeError(f"Trying to split along empty embedding dim: {C}")
             split_sizes = get_split_sizes(C, self.es)
+            print('split_sizes', split_sizes)
             x_splits = torch.split(x_stack, split_sizes, dim=-1)
-
+            print('torch.split(x_stack, split_sizes, dim=-1).shape', x_splits.shape)
             w = self.weights[rep_idx - 1].weight.view(-1)
+            print('self.weights[rep_idx - 1].weight.view(-1).shape', w.shape)
+            print('w.numel()', w.numel())
             n = w.numel() // self.es
+            print('n', n)
             assert w.numel() == self.es * n, f"Expected {self.es * n} weights, got {w.numel()}"
 
             # Apply weights to each split
             x_proj = []
             for i in range(self.es):
+                print('i', i)
                 w_i = w[i * n : (i + 1) * n]
+                print('w[i * n : (i + 1) * n].shape', w_i.shape)
                 x_i = x_splits[i]
-                x_proj_i = torch.tensordot(w_i, x_i, dims=1) 
+                print('x_splits[i].shape', x_i.shape)
+                x_proj_i = torch.tensordot(w_i, x_i, dims=1)
+                print('torch.tensordot(w_i, x_i, dims=1).shape', x_proj_i.shape)
                 x_proj.append(x_proj_i)
+                print('len(x_proj)', len(x_proj))
             # Concatenate along the last dimension
             x = torch.cat(x_proj, dim=-1)
+            print('torch.cat(x_proj, dim=-1).shape', x.shape)
             del x_proj, x_splits, split_sizes, x_stack, C, n, w
 
         x = self.transformer.ln_f(x)
+        print('self.transformer.ln_f(x)')
 
         if use_cache:
             x = self.lm_cache.get_final_logits(x)
