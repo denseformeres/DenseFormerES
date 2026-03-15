@@ -347,7 +347,6 @@ class DenseformerES(nn.Module):
                 x,
                 
             )
-            print('len(x_accs)', len(x_accs))
             x_stack = x_accs[rep_idx % self.dilation_factor][1]
             print('x_stack.shape', x_stack.shape)
             if x_stack is None:
