@@ -332,7 +332,7 @@ class DenseformerES(nn.Module):
             x_accs.append((torch.zeros((current_group_size, *x.shape), device=x.device, dtype=x.dtype), None))
             print('len(x_accs)', len(x_accs))
         x_accs[0] = apply_inplace_set(x_accs[0], 0, x)
-        print('x_accs[0].shape', x_accs[0].shape)
+        print('len(x_accs[0])', len(x_accs[0]))
         for rep_idx in range(1, self.n_repeat+1):
             print('rep_idx', rep_idx)
             if rep_idx == 1 + self.n_cuda0:
