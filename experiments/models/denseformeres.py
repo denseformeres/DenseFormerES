@@ -340,7 +340,6 @@ class DenseformerES(nn.Module):
 
             for i in range(n):
                 block_index = (rep_idx % self.dilation_factor) + i * self.dilation_factor
-                print(f"w[{i}] multiplies block output from rep_idx={block_index}")
 
             x_left = torch.tensordot(w[:n], x_left, dims=1)
             x_right = torch.tensordot(w[n:], x_right, dims=1)
