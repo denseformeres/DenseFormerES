@@ -26,14 +26,14 @@ from . import positional_encoders, caches
 
 def safe_move(x, device, *, context="forward"):
     if isinstance(x, torch.nn.Module):
-        return x.to(device)
+        return x.to('cpu').to(device)
     elif isinstance(x, torch.Tensor):
         if context == "forward":
             # preserve graph
-            return x.to(device, non_blocking=True)
+            return x.to('cpu').to(device, non_blocking=True)
         else:
             # init/checkpoint contexts; no need to detach here either
-            return x.to(device)
+            return x.to('cpu').to(device)
     elif hasattr(x, "encoder"):  # your closure case
         x.encoder = safe_move(x.encoder, device, context=context)
         return x
