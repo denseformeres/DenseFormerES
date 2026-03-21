@@ -298,8 +298,6 @@ class DenseformerES(nn.Module):
         else:
             idx, pos_emb_closure = self.transformer.wpe(idx)
 
-        print("idx min/max:", idx.min().item(), idx.max().item())
-        print("vocab size:", self.config.vocab_size)
         assert idx.max().item() < self.config.vocab_size, "token index out of bounds!"
         assert idx.min().item() >= 0, "token index negative!"
         tok_emb = self.transformer.wte(idx)
