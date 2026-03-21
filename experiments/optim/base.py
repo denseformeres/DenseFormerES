@@ -69,7 +69,7 @@ def train_base(model, opt, data, scheduler, iterations, acc_steps, batch_size, s
                 print(f"Warning: targets contain indices >= vocab_size ({model.config.vocab_size})")
             with type_ctx:
                 with distributed_backend.get_context_for_microstep_forward(model=model, microstep_idx=microstep_idx, gradient_accumulation_steps=acc_steps):
-                    if getattr(distributed_backend.get_raw_model(model), "needs_iter", False):
+                    if getattr(model, "needs_iter", False):
                         outputs = model(x, targets=y, iter=itr)
                     else:
                         if torch.isnan(x).any():
@@ -77,10 +77,26 @@ def train_base(model, opt, data, scheduler, iterations, acc_steps, batch_size, s
 
                         if torch.isnan(y).any():
                             print("Target y contains NaNs!")
+                        if not torch.isfinite(x).all():
+                            raise ValueError(f"Non-finite val detected")
+                        if not torch.isfinite(y).all():
+                            raise ValueError(f"Non-finite val detected")
                         outputs = model(x, targets=y)
-
+                        
+            logits = outputs.get("logits")
+            if logits is not None:
+                if not torch.isfinite(logits).all():
+                    raise ValueError("Logits contain NaN/Inf")
             loss = outputs['loss']
+            if not torch.isfinite(loss):
+                raise ValueError(f"Non-finite loss detected: {loss}")
             loss.backward()
+            total_update = 0
+            for p in model.parameters():
+                if p.grad is not None:
+                    total_update += p.grad.abs().mean().item()
+
+            print("mean grad after loss back:", total_update)
             substep += 1
 
         # # ---- TOP LAYERS ----
@@ -114,7 +130,12 @@ def train_base(model, opt, data, scheduler, iterations, acc_steps, batch_size, s
         if extra_args.grad_clip != 0.0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), extra_args.grad_clip)
 
+        grads_before = [p.grad.clone() for p in model.parameters() if p.grad is not None]
         opt.step()
+        grads_after = [p.grad for p in model.parameters() if p.grad is not None]
+
+        print("max grad before opt step:", max(g.abs().max().item() for g in grads_before))
+        print("max grad after opt step:", max(g.abs().max().item() for g in grads_after))
 
         if hasattr(scheduler, 'total_steps'):
             max_steps = scheduler.total_steps
@@ -131,7 +152,7 @@ def train_base(model, opt, data, scheduler, iterations, acc_steps, batch_size, s
         itr += 1
 
         if itr % eval_freq == 0 or itr == iterations: # from here it's only evaluation code, all the training is above
-            if distributed_backend.is_master_process():
+            if True:
                 t1 = time.time()
                 dt = t1 - t0
                 epoch = substep//num_substeps_per_epoch
@@ -180,7 +201,7 @@ def train_base(model, opt, data, scheduler, iterations, acc_steps, batch_size, s
                 model.train()
                 t0 = time.time()
         
-        if distributed_backend.is_master_process():
+        if True:
             if extra_args.save_checkpoint_freq is not None and itr % extra_args.save_checkpoint_freq == 0:
                 save_checkpoint(distributed_backend=distributed_backend,
                                 model=model,
