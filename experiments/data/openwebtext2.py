@@ -20,7 +20,7 @@ from datasets import Dataset
 import glob
 import json 
 
-OWT2_DATA_PATH = './openwebtext2'
+OWT2_DATA_PATH = '/mnt/lustre/users/inf/kajm20/df/openwebtext2'
 tknzr = tiktoken.get_encoding("gpt2")
 
 
@@ -29,7 +29,7 @@ def prepare_openwebtext2_data(config):
 
 
 def data_generator():
-    for filename in sorted(glob.glob("./openwebtext2", recursive=True)):
+    for filename in sorted(glob.glob("/mnt/lustre/scratch/inf/kajm20/.cache/huggingface/datasets/downloads/extracted/d836b*/**/*.jsonl", recursive=True)):
         with open(filename, "r", encoding="utf-8") as f:
             for line in f:
                 try:
