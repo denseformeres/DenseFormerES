@@ -191,3 +191,24 @@ def train_base(model, opt, data, scheduler, iterations, acc_steps, batch_size, s
                 if extra_args.wandb:
                     wandb.log({
                         "iter": itr,
+                        "train/loss": train_loss,
+                        "val/loss": val_loss,
+                        "val/perplexity": val_perplexity,
+                        "val/acc": val_acc,
+                        "lr": current_lr,
+                    })
+
+                model.train()
+                t0 = time.time()
+        
+        if True:
+            if extra_args.save_checkpoint_freq is not None and itr % extra_args.save_checkpoint_freq == 0:
+                save_checkpoint(distributed_backend=distributed_backend,
+                                model=model,
+                                opt=opt,
+                                scheduler=scheduler,
+                                itr=itr,
+                                ckpt_path=f"{ckpt_path}/{extra_args.ckpt_name}")
+                print(f"saved checkpoint to {ckpt_path}/{extra_args.ckpt_name}")
+
+    return stats
