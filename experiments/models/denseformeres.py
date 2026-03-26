@@ -45,6 +45,16 @@ def safe_move(x, device, *, context="forward"):
     else:
         return x
 
+def tensor_stats(name, t):
+    t_detached = t.detach()
+    print(
+        f"{name} | device={t.device} dtype={t.dtype} "
+        f"mean={t_detached.mean().item():.6f} "
+        f"std={t_detached.std().item():.6f} "
+        f"min={t_detached.min().item():.6f} "
+        f"max={t_detached.max().item():.6f}"
+    )
+
 class InPlaceSetSlice(torch.autograd.Function):
 
     @staticmethod
@@ -339,11 +349,17 @@ class DenseformerES(nn.Module):
                 old_0 = x_accs[rep_idx % self.dilation_factor][0].clone()
                 old_1 = x_accs[rep_idx % self.dilation_factor][1].clone()
                 old_x = x.clone()
+                tensor_stats("x_before", x)
+                tensor_stats("0", x_accs[rep_idx % self.dilation_factor][0])
+                tensor_stats("1", x_accs[rep_idx % self.dilation_factor][1])
                 x = safe_move(x, "cuda:1")
                 x_accs[rep_idx % self.dilation_factor] = (safe_move(x_accs[rep_idx % self.dilation_factor][0], 'cuda:1'), safe_move(x_accs[rep_idx % self.dilation_factor][1], 'cuda:1'))
-                print("tensor 0 equal:", torch.allclose(old_0, x_accs[rep_idx % self.dilation_factor][0], atol=1e-6, rtol=1e-5))
-                print("tensor 1 equal:", torch.allclose(old_1, x_accs[rep_idx % self.dilation_factor][1], atol=1e-6, rtol=1e-5))
-                print("x equal:", torch.allclose(old_x, x, atol=1e-6, rtol=1e-5))
+                # print("tensor 0 equal:", torch.allclose(old_0, x_accs[rep_idx % self.dilation_factor][0], atol=1e-6, rtol=1e-5))
+                # print("tensor 1 equal:", torch.allclose(old_1, x_accs[rep_idx % self.dilation_factor][1], atol=1e-6, rtol=1e-5))
+                # print("x equal:", torch.allclose(old_x, x, atol=1e-6, rtol=1e-5))
+                tensor_stats("x_before", x)
+                tensor_stats("0", x_accs[rep_idx % self.dilation_factor][0])
+                tensor_stats("1", x_accs[rep_idx % self.dilation_factor][1])
             for block in self.transformer.h[rep_idx-1]:
                 x = block(x, pos_emb_closure, cache_context, start_index=index_shift)
                 #print('block(x, pos_emb_closure, cache_context, start_index=index_shift).shape', x.shape)
