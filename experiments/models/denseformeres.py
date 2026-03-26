@@ -336,8 +336,14 @@ class DenseformerES(nn.Module):
         for rep_idx in range(1, self.n_repeat+1):
             #print('rep_idx', rep_idx)
             if rep_idx == 1 + self.n_cuda0:
+                old_0 = x_accs[rep_idx % self.dilation_factor][0].clone()
+                old_1 = x_accs[rep_idx % self.dilation_factor][1].clone()
+                old_x = x.clone()
                 x = safe_move(x, "cuda:1")
                 x_accs[rep_idx % self.dilation_factor] = (safe_move(x_accs[rep_idx % self.dilation_factor][0], 'cuda:1'), safe_move(x_accs[rep_idx % self.dilation_factor][1], 'cuda:1'))
+                print("tensor 0 equal:", torch.allclose(old_0, x_accs[rep_idx % self.dilation_factor][0], atol=1e-6, rtol=1e-5))
+                print("tensor 1 equal:", torch.allclose(old_1, x_accs[rep_idx % self.dilation_factor][1], atol=1e-6, rtol=1e-5))
+                print("x equal:", torch.allclose(old_x, x, atol=1e-6, rtol=1e-5))
             for block in self.transformer.h[rep_idx-1]:
                 x = block(x, pos_emb_closure, cache_context, start_index=index_shift)
                 #print('block(x, pos_emb_closure, cache_context, start_index=index_shift).shape', x.shape)
