@@ -244,8 +244,9 @@ def main(args):
         # Restore optimizer + scheduler
         if 'optimizer' in checkpoint:
             opt.load_state_dict(checkpoint['optimizer'])
-        if 'scheduler' in checkpoint and scheduler is not None:
-            scheduler.load_state_dict(checkpoint['scheduler'])
+        if not args.orlr:
+            if 'scheduler' in checkpoint and scheduler is not None:
+                scheduler.load_state_dict(checkpoint['scheduler'])
 
         print(model.transformer.wte.weight.dtype)
 
@@ -280,17 +281,28 @@ def main(args):
 
         scan_obj(ckpt)
 
-        # === OVERRIDE LR ===
-        # if args.lr is not None:
-        #     print(f"Overriding checkpoint LR with {args.lr:.2e}")
-        #     for g in opt.param_groups:
-        #         g['lr'] = args.lr
-        #         g['initial_lr'] = args.lr
+        if args.orlr:
+            if args.lr is None:
+                raise ValueError("--orlr requires --lr")
 
-        #     # Force scheduler to recompute based on new LR
-        #     if isinstance(scheduler, torch.optim.lr_scheduler.LambdaLR):
-        #         scheduler.base_lrs = [args.lr for _ in scheduler.base_lrs]
-        #         scheduler.step(scheduler.last_epoch)  # resync internal state
+            print(f"Overriding checkpoint LR with {args.lr:.2e}")
+            print(f"Rebuilding scheduler: {args.scheduler}")
+
+            # --- 1. Override optimizer LR ---
+            for g in opt.param_groups:
+                g['lr'] = args.lr
+                g['initial_lr'] = args.lr
+
+            # --- 2. Recreate scheduler from scratch ---
+            scheduler = make_scheduler(opt)
+
+            # --- 3. Align scheduler with current iteration ---
+            if scheduler is not None:
+                if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                    # plateau doesn't use step index the same way
+                    pass
+                else:
+                    scheduler.last_epoch = getattr(args, 'start_iter', 0)
 
         resume_iter = checkpoint.get('itr', 0)
         print(f"Resuming training from iteration {resume_iter}")
