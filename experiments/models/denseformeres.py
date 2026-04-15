@@ -346,9 +346,6 @@ class DenseformerES(nn.Module):
         for rep_idx in range(1, self.n_repeat+1):
             #print('rep_idx', rep_idx)
             if rep_idx == 1 + self.n_cuda0:
-                old_0 = x_accs[rep_idx % self.dilation_factor][0].clone()
-                old_1 = x_accs[rep_idx % self.dilation_factor][1].clone()
-                old_x = x.clone()
                 # tensor_stats("x_before", x)
                 # tensor_stats("0 be4", x_accs[rep_idx % self.dilation_factor][0])
                 # tensor_stats("1 be4", x_accs[rep_idx % self.dilation_factor][1])
