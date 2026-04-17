@@ -96,7 +96,7 @@ def train_base(model, opt, data, scheduler, iterations, acc_steps, batch_size, s
                 if p.grad is not None:
                     total_update += p.grad.abs().mean().item()
 
-            print("mean grad after loss back:", total_update)
+            # print("mean grad after loss back:", total_update)
             substep += 1
 
         # # ---- TOP LAYERS ----
@@ -134,8 +134,8 @@ def train_base(model, opt, data, scheduler, iterations, acc_steps, batch_size, s
         opt.step()
         grads_after = [p.grad for p in model.parameters() if p.grad is not None]
 
-        print("max grad before opt step:", max(g.abs().max().item() for g in grads_before))
-        print("max grad after opt step:", max(g.abs().max().item() for g in grads_after))
+        # print("max grad before opt step:", max(g.abs().max().item() for g in grads_before))
+        # print("max grad after opt step:", max(g.abs().max().item() for g in grads_after))
 
         if hasattr(scheduler, 'total_steps'):
             max_steps = scheduler.total_steps
