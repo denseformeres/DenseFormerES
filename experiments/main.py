@@ -169,6 +169,7 @@ def main(args):
                 max_lr = args.lr
                 min_lr = max_lr * 0.1
                 start_iter = getattr(args, 'start_iter', 0)
+                print(current_step, start_iter)
 
                 if current_step < warmup_steps:
                     # Linear warmup
