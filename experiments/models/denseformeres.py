@@ -233,7 +233,7 @@ class DenseformerES(nn.Module):
         
         n_layer = config.n_layer
 
-        self.n_cuda0 = max(0, n_layer - 20) 
+        self.n_cuda0 = max(0, n_layer - 19) 
 
         # Now move layers
         for i, block in enumerate(self.transformer["h"]):
