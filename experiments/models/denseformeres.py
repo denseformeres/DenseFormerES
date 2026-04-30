@@ -351,8 +351,6 @@ class DenseformerES(nn.Module):
                 tensor_stats("1 be4", x_accs[rep_idx % self.dilation_factor][1])
                 x = safe_move(x, "cuda:1")
                 x_accs[rep_idx % self.dilation_factor] = (safe_move(x_accs[rep_idx % self.dilation_factor][0], 'cuda:1'), safe_move(x_accs[rep_idx % self.dilation_factor][1], 'cuda:1'))
-                print("tensor 0 equal:", torch.allclose(old_0, x_accs[rep_idx % self.dilation_factor][0], atol=1e-6, rtol=1e-5))
-                print("tensor 1 equal:", torch.allclose(old_1, x_accs[rep_idx % self.dilation_factor][1], atol=1e-6, rtol=1e-5))
                 print("x equal:", torch.allclose(old_x, x, atol=1e-6, rtol=1e-5))
                 tensor_stats("x after", x)
                 tensor_stats("0 after", x_accs[rep_idx % self.dilation_factor][0])
